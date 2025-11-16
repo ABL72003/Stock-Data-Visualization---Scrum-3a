@@ -3,9 +3,6 @@ IT-4320 Project 3
 Python app that connects to the Alpha Vantage API to display stock data trends.
 
 ## Team Members
-- Paige Dorrell (Scrum Master)
-- James Perez (PO)
-- Will Amlong (Developer)
 - Logan Anderson (Developer)
 
 ## Features
