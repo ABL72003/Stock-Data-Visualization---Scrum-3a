@@ -13,10 +13,15 @@ import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
-ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "7POB601QF0U51Q8R")
+# Use env var if set, otherwise fall back to your existing key
+ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "HQXG2RROB6JX4YLI")
 
-def load_stock_symbols(csv_path = "stocks.csv"):
 
+def load_stock_symbols(csv_path="stocks.csv"):
+    """
+    Read symbols + names from stocks.csv to populate the dropdown.
+    Assumes a header row with at least 'Symbol' and maybe 'Name' or 'Security'.
+    """
     symbols = []
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -27,8 +32,11 @@ def load_stock_symbols(csv_path = "stocks.csv"):
                 symbols.append({"symbol": symbol.strip(), "name": name.strip()})
     return symbols
 
-def get_stock_data(symbol, function_choice):
 
+def get_stock_data(symbol, function_choice):
+    """
+    Similar to your get_stock_data() in main.py, but fixed + used by Flask.
+    """
     function_map = {
         "intraday": "TIME_SERIES_INTRADAY",
         "daily": "TIME_SERIES_DAILY",
@@ -50,6 +58,7 @@ def get_stock_data(symbol, function_choice):
         "outputsize": "full",
     }
 
+    # Intraday requires an interval parameter
     if function_choice == "intraday":
         params["interval"] = "60min"
 
@@ -65,6 +74,7 @@ def get_stock_data(symbol, function_choice):
 
     return data
 
+
 def extract_series_for_range(data, start_date, end_date):
     """
     Mimics your chart_generator() logic: find the Time Series key,
@@ -79,7 +89,7 @@ def extract_series_for_range(data, start_date, end_date):
     if not time_series:
         raise RuntimeError("Invalid time series data returned from API.")
 
-    #filters
+    # Filter by date range (YYYY-MM-DD)
     filtered_dates = [d for d in time_series.keys() if start_date <= d <= end_date]
     filtered_dates.sort()
 
@@ -110,7 +120,7 @@ def create_chart_base64(
         ax.plot(dates, low_prices, label="Low")
         ax.plot(dates, close_prices, label="Close")
     else:
-      
+        # For bar, just show close prices to keep it readable
         ax.bar(dates, close_prices, label="Close")
 
     ax.set_title(f"Stock Data for {symbol}: {start_date} to {end_date}")
@@ -133,7 +143,7 @@ def create_chart_base64(
 def index():
     symbols = load_stock_symbols()
 
-
+    # Defaults for page render
     chart_image = None
     error = None
     selected_symbol = None
@@ -155,7 +165,7 @@ def index():
             if not start_date or not end_date:
                 raise ValueError("Please enter both start and end dates.")
 
-          
+            # Validate date order
             start_obj = datetime.strptime(start_date, "%Y-%m-%d")
             end_obj = datetime.strptime(end_date, "%Y-%m-%d")
             if end_obj < start_obj:
@@ -172,6 +182,7 @@ def index():
             )
 
         except Exception as e:
+            # Do not crash; show the error message on the page
             error = str(e)
 
     return render_template(
